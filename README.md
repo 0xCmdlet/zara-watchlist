@@ -6,8 +6,9 @@ A simple script to monitor Zara product availability using Playwright.
 
 - Opens Zara product pages in a browser
 - Checks if products are sold out (AUSVERKAUFT) or available for purchase
+- Extracts available sizes and checks if your desired size is in stock
 - Saves product state to track changes over time
-- Sends email notifications when products become available
+- Sends email notifications when products become available in your desired size
 - Stores raw HTML for debugging
 
 ## Setup
@@ -33,7 +34,17 @@ EMAIL_PASSWORD=your-password
 TO_EMAIL=notification-email@example.com
 ```
 
-3. Add products to monitor in `src/products.py`
+3. Add products to monitor in `src/products.py`:
+```python
+PRODUCTS = [
+    {
+        "id": "p08679425",
+        "name": "PRODUCT NAME",
+        "url": "https://www.zara.com/...",
+        "size": "M"  # Desired size (XS, S, M, L, XL, etc.)
+    }
+]
+```
 
 4. Run the script:
 ```bash
@@ -76,10 +87,15 @@ crontab -e
 5. Checks for availability status:
    - Sold out: "AUSVERKAUFT" button present
    - Available: "Hinzufügen" (add to cart) button present
-6. Compares with previous status from `data/state.json`
-7. Sends email notification if product became available
-8. Saves updated state to `data/state.json`
-9. Saves raw HTML to `data/raw/`
+6. Clicks "Hinzufügen" button to reveal size selector
+7. Extracts all available sizes
+8. Checks if your desired size is in stock
+9. Compares with previous status from `data/state.json`
+10. Sends email notification ONLY if:
+    - Product became available (status changed)
+    - AND your desired size is in stock
+11. Saves updated state to `data/state.json`
+12. Saves raw HTML to `data/raw/`
 
 ## Files
 

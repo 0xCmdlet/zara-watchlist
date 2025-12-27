@@ -21,7 +21,7 @@ def main():
         print(f"URL: {url}")
 
         try:
-            html, availability = fetch_product_page(product)
+            html, availability, available_sizes = fetch_product_page(product)
 
             # --- SAVE RAW HTML ---
             raw_dir = Path(__file__).resolve().parent.parent / "data" / "raw"
@@ -36,9 +36,19 @@ def main():
             print(f"  Previous status: {prev}")
             print(f"  Current status:  {availability}")
 
-            # Check if status changed to available
-            if availability == "available" and prev != "available":
-                print(f"  STATUS CHANGE: {name} is now AVAILABLE!")
+            # Check if desired size is available
+            desired_size = product.get("size")
+            size_match = desired_size and desired_size in available_sizes
+
+            if desired_size:
+                if size_match:
+                    print(f"  Desired size {desired_size} is AVAILABLE!")
+                else:
+                    print(f"  Desired size {desired_size} is NOT available")
+
+            # Check if status changed to available AND desired size is in stock
+            if availability == "available" and prev != "available" and size_match:
+                print(f"  STATUS CHANGE: {name} (Size {desired_size}) is now AVAILABLE!")
                 send_status_change_email(product, prev or "unknown", availability)
                 newly_available_products.append(product)
 
@@ -57,7 +67,8 @@ def main():
     print(f"Check complete. {len(newly_available_products)} product(s) became available.")
     if newly_available_products:
         for p in newly_available_products:
-            print(f"  - {p['name']}")
+            size = p.get('size', 'N/A')
+            print(f"  - {p['name']} (Size: {size})")
     print(f"{'='*60}")
 
 

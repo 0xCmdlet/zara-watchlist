@@ -73,9 +73,9 @@ def send_status_change_email(product: Dict, old_status: str, new_status: str) ->
     size = product.get("size", "N/A")
     url = product.get("url", "")
 
-    subject = f"Zara Status Change: {name}"
+    subject = f"Zara Alert: {name} (Size {size}) Available!"
 
-    body = f"""Product status has changed:
+    body = f"""Your desired product is now AVAILABLE!
 
 Product: {name}
 Size: {size}
@@ -84,8 +84,8 @@ URL: {url}
 Previous Status: {old_status}
 Current Status: {new_status}
 
-{f"This product is now AVAILABLE! Check it out:" if new_status == "available" else ""}
-{url if new_status == "available" else ""}
+BUY NOW before it sells out:
+{url}
 """
 
     msg = EmailMessage()

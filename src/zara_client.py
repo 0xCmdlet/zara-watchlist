@@ -2,10 +2,12 @@ from typing import Dict
 from playwright.sync_api import sync_playwright
 
 
-def fetch_product_page(product: Dict) -> tuple[str, str]:
+def fetch_product_page(product: Dict) -> tuple[str, str, list[str]]:
     """
     Opens a Zara product page, accepts cookies, checks if sold out.
-    Returns (html, availability_status) where status is 'available', 'sold_out', or 'unknown'.
+    Returns (html, availability_status, available_sizes) where:
+    - status is 'available', 'sold_out', or 'unknown'
+    - available_sizes is a list of size strings (e.g., ['XS', 'S', 'M', 'L'])
     """
     url = product["url"]
 
@@ -69,22 +71,48 @@ def fetch_product_page(product: Dict) -> tuple[str, str]:
         except Exception:
             print("  Similar products button not found")
 
-        # 5) Check for AUSVERKAUFT span
+        # 5) Check for add-to-cart button and click it to reveal size selector
+        available_sizes = []
+        add_to_cart = page.query_selector('button[data-qa-action="add-to-cart"]')
+
+        if add_to_cart:
+            print("  Clicking add-to-cart button to reveal size selector...")
+            add_to_cart.click()
+
+            # Wait for size selector to appear
+            try:
+                page.wait_for_selector('ul.size-selector-sizes', timeout=3000)
+                print("  Size selector revealed")
+
+                # Extract available sizes
+                size_buttons = page.query_selector_all('button.size-selector-sizes-size__button')
+                for button in size_buttons:
+                    action = button.get_attribute('data-qa-action')
+                    if action in ['size-in-stock', 'size-low-on-stock']:
+                        label_div = button.query_selector('div[data-qa-qualifier="size-selector-sizes-size-label"]')
+                        if label_div:
+                            size = label_div.text_content().strip()
+                            available_sizes.append(size)
+
+                print(f"  Available sizes: {', '.join(available_sizes) if available_sizes else 'None'}")
+            except Exception:
+                print("  Size selector did not appear")
+        else:
+            print("  No add-to-cart button found")
+
+        # 6) Determine overall availability
         availability = "unknown"
         ausverkauft = page.query_selector('span.zds-button__second-line:has-text("AUSVERKAUFT")')
         if ausverkauft:
             availability = "sold_out"
             print("  Product is SOLD OUT (AUSVERKAUFT)")
+        elif add_to_cart:
+            availability = "available"
+            print("  Product is AVAILABLE")
         else:
-            # Check for add-to-cart button instead
-            add_to_cart = page.query_selector('button[data-qa-action="add-to-cart"]')
-            if add_to_cart:
-                availability = "available"
-                print("  Product is AVAILABLE (Hinzufügen button found)")
-            else:
-                print("  Could not determine availability")
+            print("  Could not determine availability")
 
-        # 6) Return HTML and availability
+        # 7) Return HTML, availability, and available sizes
         html = page.content()
         browser.close()
-        return html, availability
+        return html, availability, available_sizes
