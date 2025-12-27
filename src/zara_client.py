@@ -2,10 +2,10 @@ from typing import Dict
 from playwright.sync_api import sync_playwright
 
 
-def fetch_product_page(product: Dict) -> str:
+def fetch_product_page(product: Dict) -> tuple[str, str]:
     """
     Opens a Zara product page, accepts cookies, checks if sold out.
-    Returns the HTML.
+    Returns (html, availability_status) where status is 'available', 'sold_out', or 'unknown'.
     """
     url = product["url"]
 
@@ -59,14 +59,6 @@ def fetch_product_page(product: Dict) -> str:
         except Exception:
             print("  No cookie banner found")
 
-        # DEBUG: Save HTML after cookies
-        from pathlib import Path
-        debug_dir = Path(__file__).resolve().parent.parent / "data" / "debug"
-        debug_dir.mkdir(parents=True, exist_ok=True)
-        debug_file = debug_dir / f"{product['id']}_after_cookies.html"
-        debug_file.write_text(page.content(), encoding="utf-8")
-        print(f"  Debug HTML saved to {debug_file}")
-
         # 3) Wait 2 seconds
         page.wait_for_timeout(2000)
 
@@ -78,18 +70,21 @@ def fetch_product_page(product: Dict) -> str:
             print("  Similar products button not found")
 
         # 5) Check for AUSVERKAUFT span
+        availability = "unknown"
         ausverkauft = page.query_selector('span.zds-button__second-line:has-text("AUSVERKAUFT")')
         if ausverkauft:
-            print("  ⚠️  Product is SOLD OUT (AUSVERKAUFT)")
+            availability = "sold_out"
+            print("  Product is SOLD OUT (AUSVERKAUFT)")
         else:
             # Check for add-to-cart button instead
             add_to_cart = page.query_selector('button[data-qa-action="add-to-cart"]')
             if add_to_cart:
-                print("  ✓ Product is AVAILABLE (Hinzufügen button found)")
+                availability = "available"
+                print("  Product is AVAILABLE (Hinzufügen button found)")
             else:
-                print("  ❓ Could not determine availability")
+                print("  Could not determine availability")
 
-        # 6) Return HTML
+        # 6) Return HTML and availability
         html = page.content()
         browser.close()
-        return html
+        return html, availability
