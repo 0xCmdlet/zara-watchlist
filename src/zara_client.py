@@ -15,7 +15,13 @@ def fetch_product_page(product: Dict) -> str:
             args=[
                 '--disable-blink-features=AutomationControlled',
                 '--disable-dev-shm-usage',
-                '--no-sandbox'
+                '--no-sandbox',
+                '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--disable-extensions',
+                '--disable-plugins',
+                '--single-process',
+                '--disable-setuid-sandbox'
             ]
         )
 
