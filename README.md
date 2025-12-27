@@ -7,6 +7,7 @@ A simple script to monitor Zara product availability using Playwright.
 - Opens Zara product pages in a browser
 - Checks if products are sold out (AUSVERKAUFT) or available for purchase
 - Saves product state to track changes over time
+- Sends email notifications when products become available
 - Stores raw HTML for debugging
 
 ## Setup
@@ -17,33 +18,77 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-2. Add products to monitor in `src/products.py`
+2. Create a `.env` file in the project root with your email settings:
+```bash
+cp .env.example .env
+# Edit .env with your actual credentials
+```
 
-3. Run the script:
+Example `.env` content:
+```env
+SMTP_SERVER=your-smtp-server.com
+SMTP_PORT=465
+EMAIL_USERNAME=your-email@example.com
+EMAIL_PASSWORD=your-password
+TO_EMAIL=notification-email@example.com
+```
+
+3. Add products to monitor in `src/products.py`
+
+4. Run the script:
 ```bash
 python src/main.py
+```
+
+## Running on VPS (Headless)
+
+On a VPS without a display server, use xvfb-run:
+
+```bash
+# Install xvfb
+sudo apt-get update && sudo apt-get install -y xvfb
+
+# Run the script
+xvfb-run python3 src/main.py
+```
+
+## Automated Monitoring with Cron
+
+To check every 30 minutes:
+
+```bash
+# Create logs directory
+mkdir -p logs
+
+# Edit crontab
+crontab -e
+
+# Add this line (adjust paths):
+*/30 * * * * cd /path/to/zara && xvfb-run /path/to/.venv/bin/python3 /path/to/src/main.py >> /path/to/logs/cron.log 2>&1
 ```
 
 ## How It Works
 
 1. Loads each product URL from `src/products.py`
-2. Opens the page with Playwright (visible browser)
+2. Opens the page with Playwright (browser automation)
 3. Accepts cookie banner
 4. Waits for product details to load
 5. Checks for availability status:
    - Sold out: "AUSVERKAUFT" button present
    - Available: "Hinzufügen" (add to cart) button present
-6. Saves state to `data/state.json`
-7. Saves raw HTML to `data/raw/`
+6. Compares with previous status from `data/state.json`
+7. Sends email notification if product became available
+8. Saves updated state to `data/state.json`
+9. Saves raw HTML to `data/raw/`
 
 ## Files
 
-- `src/main.py` - Main script
-- `src/zara_client.py` - Browser automation logic
+- `src/main.py` - Main script orchestration
+- `src/zara_client.py` - Browser automation and availability checking
+- `src/email_client.py` - Email notification sender
 - `src/products.py` - Product configuration
 - `src/state_store.py` - State persistence
-- `src/zara_parser.py` - HTML parsing (placeholder)
-- `src/config.py` - Settings
+- `.env` - Email credentials (not committed to git)
+- `.env.example` - Template for environment variables
 - `data/state.json` - Last known availability state
-- `data/raw/` - Raw HTML files
-- `data/debug/` - Debug HTML snapshots
+- `data/raw/` - Raw HTML files for debugging

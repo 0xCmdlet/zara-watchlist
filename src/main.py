@@ -3,13 +3,14 @@
 from products import PRODUCTS
 from zara_client import fetch_product_page
 from state_store import load_state, save_state
+from email_client import send_status_change_email
 from pathlib import Path
-
 
 
 def main():
     state = load_state()
     updated_state = {}
+    newly_available_products = []
 
     for product in PRODUCTS:
         pid = product["id"]
@@ -35,7 +36,12 @@ def main():
             print(f"  Previous status: {prev}")
             print(f"  Current status:  {availability}")
 
-            # later we'll trigger notifications when prev != availability
+            # Check if status changed to available
+            if availability == "available" and prev != "available":
+                print(f"  STATUS CHANGE: {name} is now AVAILABLE!")
+                send_status_change_email(product, prev or "unknown", availability)
+                newly_available_products.append(product)
+
             updated_state[pid] = availability
 
         except RuntimeError as e:
@@ -45,6 +51,14 @@ def main():
             continue
 
     save_state(updated_state)
+
+    # Summary
+    print(f"\n{'='*60}")
+    print(f"Check complete. {len(newly_available_products)} product(s) became available.")
+    if newly_available_products:
+        for p in newly_available_products:
+            print(f"  - {p['name']}")
+    print(f"{'='*60}")
 
 
 if __name__ == "__main__":
