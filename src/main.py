@@ -36,19 +36,28 @@ def main():
             print(f"  Previous status: {prev}")
             print(f"  Current status:  {availability}")
 
-            # Check if desired size is available
-            desired_size = product.get("size")
-            size_match = desired_size and desired_size in available_sizes
+            # Check if any desired size is available
+            desired_sizes = product.get("sizes", [])
+            if not desired_sizes:
+                # Backwards compatibility: check for old "size" field
+                old_size = product.get("size")
+                if old_size:
+                    desired_sizes = [old_size]
 
-            if desired_size:
-                if size_match:
-                    print(f"  Desired size {desired_size} is AVAILABLE!")
+            # Find which desired sizes are in stock
+            matching_sizes = [size for size in desired_sizes if size in available_sizes]
+
+            if desired_sizes:
+                if matching_sizes:
+                    print(f"  Desired size(s) {', '.join(matching_sizes)} AVAILABLE!")
                 else:
-                    print(f"  Desired size {desired_size} is NOT available")
+                    print(f"  Desired size(s) {', '.join(desired_sizes)} NOT available")
 
-            # Check if status changed to available AND desired size is in stock
-            if availability == "available" and prev != "available" and size_match:
-                print(f"  STATUS CHANGE: {name} (Size {desired_size}) is now AVAILABLE!")
+            # Check if status changed to available AND at least one desired size is in stock
+            if availability == "available" and prev != "available" and matching_sizes:
+                print(f"  STATUS CHANGE: {name} (Sizes: {', '.join(matching_sizes)}) is now AVAILABLE!")
+                # Store matching sizes in product for email
+                product['matching_sizes'] = matching_sizes
                 send_status_change_email(product, prev or "unknown", availability)
                 newly_available_products.append(product)
 
@@ -67,8 +76,12 @@ def main():
     print(f"Check complete. {len(newly_available_products)} product(s) became available.")
     if newly_available_products:
         for p in newly_available_products:
-            size = p.get('size', 'N/A')
-            print(f"  - {p['name']} (Size: {size})")
+            matching_sizes = p.get('matching_sizes', [])
+            if matching_sizes:
+                size_text = ", ".join(matching_sizes)
+            else:
+                size_text = p.get('size', 'N/A')
+            print(f"  - {p['name']} (Size: {size_text})")
     print(f"{'='*60}")
 
 

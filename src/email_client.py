@@ -70,15 +70,23 @@ def send_status_change_email(product: Dict, old_status: str, new_status: str) ->
     :param new_status: Current availability status
     """
     name = product.get("name", "Unknown")
-    size = product.get("size", "N/A")
+
+    # Check for matching sizes (set in main.py)
+    matching_sizes = product.get("matching_sizes", [])
+    if matching_sizes:
+        size_text = ", ".join(matching_sizes)
+    else:
+        # Backwards compatibility
+        size_text = product.get("size", "N/A")
+
     url = product.get("url", "")
 
-    subject = f"Zara Alert: {name} (Size {size}) Available!"
+    subject = f"Zara Alert: {name} (Size {size_text}) Available!"
 
     body = f"""Your desired product is now AVAILABLE!
 
 Product: {name}
-Size: {size}
+Available Size(s): {size_text}
 URL: {url}
 
 Previous Status: {old_status}
