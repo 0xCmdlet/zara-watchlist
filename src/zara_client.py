@@ -61,24 +61,39 @@ def fetch_product_page(product: Dict) -> tuple[str, str, list[str]]:
         except Exception:
             print("  No cookie banner found")
 
-        # 3) Wait 2 seconds
+        # 3) Dismiss geolocation modal if present
+        try:
+            # Check for geolocation modal and close it
+            geolocation_close = page.wait_for_selector('button[aria-label*="lose"], .geolocation-modal button.zds-button--link', timeout=3000)
+            if geolocation_close:
+                geolocation_close.click()
+                print("  Geolocation modal dismissed")
+        except Exception:
+            print("  No geolocation modal found")
+
+        # 4) Wait 2 seconds
         page.wait_for_timeout(2000)
 
-        # 4) Wait for the similar products button to render
+        # 5) Wait for the similar products button to render
         try:
             page.wait_for_selector("button.product-detail-show-similar-products", timeout=5000)
             print("  Similar products button found")
         except Exception:
             print("  Similar products button not found")
 
-        # 5) Check for add-to-cart button and click it to reveal size selector
+        # 6) Check for add-to-cart button and click it to reveal size selector
         available_sizes = []
         add_to_cart = page.query_selector('button[data-qa-action="add-to-cart"]')
 
         if add_to_cart:
             print("  Clicking add-to-cart button to reveal size selector...")
-            add_to_cart.click()
+            try:
+                add_to_cart.click(timeout=10000)  # 10 second timeout for click
+            except Exception as e:
+                print(f"  Failed to click add-to-cart button: {e}")
+                add_to_cart = None  # Mark as failed
 
+        if add_to_cart:
             # Wait for size selector to appear
             try:
                 page.wait_for_selector('ul.size-selector-sizes', timeout=3000)
@@ -100,7 +115,7 @@ def fetch_product_page(product: Dict) -> tuple[str, str, list[str]]:
         else:
             print("  No add-to-cart button found")
 
-        # 6) Determine overall availability
+        # 7) Determine overall availability
         availability = "unknown"
         ausverkauft = page.query_selector('span.zds-button__second-line:has-text("AUSVERKAUFT")')
         if ausverkauft:
@@ -112,7 +127,7 @@ def fetch_product_page(product: Dict) -> tuple[str, str, list[str]]:
         else:
             print("  Could not determine availability")
 
-        # 7) Return HTML, availability, and available sizes
+        # 8) Return HTML, availability, and available sizes
         html = page.content()
         browser.close()
         return html, availability, available_sizes

@@ -25,4 +25,10 @@ PRODUCTS = [
         "url": "https://www.zara.com/de/de/taillierter-blazer-aus-100-leder-p05479773.html?v1=496139413",
         "sizes": ["L"]  # Or just one size in a list
     },
+    {
+        "id": "p09343511",
+        "name": "Test Produkt",
+        "url": "https://www.zara.com/de/de/blazer-aus-100-wolle-zw-collection-limited-edition-p09343511.html?v1=488138777",
+        "sizes": ["S"]
+    }
 ]

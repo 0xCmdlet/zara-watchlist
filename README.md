@@ -31,7 +31,7 @@ SMTP_SERVER=your-smtp-server.com
 SMTP_PORT=465
 EMAIL_USERNAME=your-email@example.com
 EMAIL_PASSWORD=your-password
-TO_EMAIL=notification-email@example.com
+TO_EMAIL=first-email@example.com,second-email@example.com  # Comma-separated for multiple recipients
 ```
 
 3. Add products to monitor in `src/products.py`:

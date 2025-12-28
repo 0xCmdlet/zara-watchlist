@@ -11,7 +11,9 @@ SMTP_SERVER = os.getenv("SMTP_SERVER")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
 USERNAME = os.getenv("EMAIL_USERNAME")
 PASSWORD = os.getenv("EMAIL_PASSWORD")
-TO_EMAIL = os.getenv("TO_EMAIL")
+TO_EMAIL_RAW = os.getenv("TO_EMAIL", "")
+# Support multiple recipients: comma-separated emails
+TO_EMAILS = [email.strip() for email in TO_EMAIL_RAW.split(",") if email.strip()]
 
 
 def send_availability_email(available_products: List[Dict]) -> None:
@@ -48,7 +50,7 @@ def send_availability_email(available_products: List[Dict]) -> None:
     # Create and send email
     msg = EmailMessage()
     msg["From"] = USERNAME
-    msg["To"] = TO_EMAIL
+    msg["To"] = ", ".join(TO_EMAILS)
     msg["Subject"] = subject
     msg.set_content(body)
 
@@ -56,7 +58,7 @@ def send_availability_email(available_products: List[Dict]) -> None:
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp:
             smtp.login(USERNAME, PASSWORD)
             smtp.send_message(msg)
-        print(f"\nEmail notification sent to {TO_EMAIL}")
+        print(f"\nEmail notification sent to {len(TO_EMAILS)} recipient(s): {', '.join(TO_EMAILS)}")
     except Exception as e:
         print(f"\nFailed to send email: {e}")
 
@@ -98,7 +100,7 @@ BUY NOW before it sells out:
 
     msg = EmailMessage()
     msg["From"] = USERNAME
-    msg["To"] = TO_EMAIL
+    msg["To"] = ", ".join(TO_EMAILS)
     msg["Subject"] = subject
     msg.set_content(body)
 
@@ -106,6 +108,6 @@ BUY NOW before it sells out:
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp:
             smtp.login(USERNAME, PASSWORD)
             smtp.send_message(msg)
-        print(f"\nStatus change email sent to {TO_EMAIL}")
+        print(f"\nStatus change email sent to {len(TO_EMAILS)} recipient(s): {', '.join(TO_EMAILS)}")
     except Exception as e:
         print(f"\nFailed to send status change email: {e}")
