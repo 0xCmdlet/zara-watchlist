@@ -91,6 +91,15 @@ def fetch_product_page(product: Dict) -> tuple[str, str, list[str]]:
                 add_to_cart.click(timeout=10000)  # 10 second timeout for click
             except Exception as e:
                 print(f"  Failed to click add-to-cart button: {e}")
+
+                # Save HTML for debugging when click fails
+                from pathlib import Path
+                error_dir = Path(__file__).resolve().parent.parent / "data" / "error_html"
+                error_dir.mkdir(parents=True, exist_ok=True)
+                error_file = error_dir / f"{product['id']}_click_failed.html"
+                error_file.write_text(page.content(), encoding="utf-8")
+                print(f"  Saved error HTML to {error_file}")
+
                 add_to_cart = None  # Mark as failed
 
         if add_to_cart:

@@ -3,3 +3,4 @@ src/__pycache__
 data
 logs
 data/state.json
+data/error_html
