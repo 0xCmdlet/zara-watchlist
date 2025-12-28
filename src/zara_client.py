@@ -62,14 +62,28 @@ def fetch_product_page(product: Dict) -> tuple[str, str, list[str]]:
             print("  No cookie banner found")
 
         # 3) Dismiss geolocation modal if present
+        modal_dismissed = False
         try:
-            # Check for geolocation modal and close it
-            geolocation_close = page.wait_for_selector('button[aria-label*="lose"], .geolocation-modal button.zds-button--link', timeout=3000)
-            if geolocation_close:
-                geolocation_close.click()
-                print("  Geolocation modal dismissed")
+            # Try clicking "Stay in Germany" button (preferred)
+            stay_button = page.wait_for_selector('button[data-qa-action="stay-in-store"]', timeout=3000)
+            if stay_button:
+                stay_button.click()
+                page.wait_for_timeout(500)  # Wait for modal to close
+                modal_dismissed = True
+                print("  Geolocation modal dismissed (stayed on German site)")
         except Exception:
-            print("  No geolocation modal found")
+            pass
+
+        if not modal_dismissed:
+            try:
+                # Fallback: Try close button (X icon)
+                close_button = page.wait_for_selector('button.zds-dialog-close-button', timeout=2000)
+                if close_button:
+                    close_button.click()
+                    page.wait_for_timeout(500)
+                    print("  Geolocation modal closed")
+            except Exception:
+                print("  No geolocation modal found")
 
         # 4) Wait 2 seconds
         page.wait_for_timeout(2000)
